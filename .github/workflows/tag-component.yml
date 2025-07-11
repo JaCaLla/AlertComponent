@@ -25,7 +25,7 @@ jobs:
       - name: Generate Version.swift file
         run: |
           pwd
-          mkdir -p Sources/AlertComponent
+          cd Sources/AlertComponent
           pwd
           echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
           ls -la
