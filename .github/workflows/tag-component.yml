@@ -1,4 +1,4 @@
-name: Generate Version.swift and create PR
+name: Update Version.swift on Tag Push
 
 on:
   push:
@@ -6,16 +6,16 @@ on:
       - '*'
 
 jobs:
-  create-pr:
+  update-version:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Fetch and checkout main
+      - name: Fetch and checkout main branch
         run: |
           git fetch origin main
           git checkout main
@@ -24,18 +24,41 @@ jobs:
         id: get_tag
         run: echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Get commit SHA of tag
+        id: tag_sha
+        run: echo "tag_sha=$(git rev-parse ${{ steps.get_tag.outputs.tag_name }})" >> $GITHUB_OUTPUT
+
+      - name: Get commit SHA of main
+        id: main_sha
+        run: echo "main_sha=$(git rev-parse main)" >> $GITHUB_OUTPUT
+
+      - name: Check if tag points to main HEAD
+        id: check_sha
+        run: |
+          echo "tag_sha: ${{ steps.tag_sha.outputs.tag_sha }}"
+          echo "main_sha: ${{ steps.main_sha.outputs.main_sha }}"
+          if [ "${{ steps.tag_sha.outputs.tag_sha }}" != "${{ steps.main_sha.outputs.main_sha }}" ]; then
+            echo "Tag does not point to the HEAD of main branch. Exiting."
+            exit 1
+          fi
+
       - name: Generate Version.swift
         run: |
           mkdir -p Sources/AlertComponent
           echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: chore: update Version.swift for tag ${{ steps.get_tag.outputs.tag_name }}
-          branch: update-version-${{ steps.get_tag.outputs.tag_name }}
-          title: Update Version.swift to tag ${{ steps.get_tag.outputs.tag_name }}
-          body: This PR updates the Version.swift file with the new tag version.
-          base: main
-          path: Sources/AlertComponent/Version.swift
+      - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add Sources/AlertComponent/Version.swift
+
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update Version.swift for tag ${{ steps.get_tag.outputs.tag_name }}"
+            git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git main
+          else
+            echo "No changes to commit"
+          fi
