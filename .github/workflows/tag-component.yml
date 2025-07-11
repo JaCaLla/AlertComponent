@@ -24,8 +24,11 @@ jobs:
 
       - name: Generate Version.swift file
         run: |
+          pwd
           mkdir -p Sources/AlertComponent
+          pwd
           echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
+          ls -la
 
       - name: Upload Version.swift as artifact
         uses: actions/upload-artifact@v4
