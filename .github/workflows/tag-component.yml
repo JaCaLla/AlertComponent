@@ -1,19 +1,19 @@
-name: Generate Git Tag Version File
+name: Generate Swift Version File from Git Tag
 
 on:
   push:
     tags:
-      - '*'  # Se ejecuta en cualquier tag (por ejemplo: v1.0.0, 2.3.1, etc.)
+      - '*'  # Ejecutar en cualquier tag
 
 jobs:
   generate-version-file:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para obtener los tags
+          fetch-depth: 0  # Necesario para obtener todos los tags
 
       - name: Get tag name
         id: get_tag
@@ -21,13 +21,11 @@ jobs:
 
       - name: Generate Swift file with tag version
         run: |
-          mkdir -p YourProject
-          echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > YourProject/GeneratedGitTag.swift
+          mkdir -p Sources/AlertComponent
+          echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
 
-      - name: Commit and push version file
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add YourProject/GeneratedGitTag.swift
-          git commit -m "Generate version file for tag ${{ steps.get_tag.outputs.tag_name }}"
-          git push
+      - name: Upload Version.swift as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VersionSwift
+          path: Sources/AlertComponent/Version.swift
