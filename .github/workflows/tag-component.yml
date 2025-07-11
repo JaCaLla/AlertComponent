@@ -1,19 +1,19 @@
-name: Generate Version.swift from Git Tag
+name: Generate Version.swift and create PR
 
 on:
   push:
     tags:
-      - '*'  # Se activa con cualquier tag
+      - '*'
 
 jobs:
-  update-version-file:
+  create-pr:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para acceder a tags y ramas
+          fetch-depth: 0
 
       - name: Fetch and checkout main
         run: |
@@ -29,17 +29,13 @@ jobs:
           mkdir -p Sources/AlertComponent
           echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
 
-      - name: Commit and push Version.swift
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git add Sources/AlertComponent/Version.swift
-
-          # Solo hacer commit si hay cambios
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: update Version.swift for tag ${{ steps.get_tag.outputs.tag_name }}"
-            git push origin main
-          else
-            echo "No changes to commit"
-          fi
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: chore: update Version.swift for tag ${{ steps.get_tag.outputs.tag_name }}
+          branch: update-version-${{ steps.get_tag.outputs.tag_name }}
+          title: Update Version.swift to tag ${{ steps.get_tag.outputs.tag_name }}
+          body: This PR updates the Version.swift file with the new tag version.
+          base: main
+          path: Sources/AlertComponent/Version.swift
