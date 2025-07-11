@@ -1,25 +1,28 @@
-name: Generate Swift Version File from Git Tag
+name: Generate Version.swift from Git Tag
 
 on:
   push:
     tags:
-      - '*'  # Ejecutar en cualquier tag
+      - '*'  # Cualquier tag
+    branches:
+      - main # Solo si el tag está sobre main
 
 jobs:
   generate-version-file:
+    if: startsWith(github.ref, 'refs/tags/') && github.ref_type == 'tag'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para obtener todos los tags
+          fetch-depth: 0  # Necesario para que git describa tags correctamente
 
       - name: Get tag name
         id: get_tag
         run: echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Generate Swift file with tag version
+      - name: Generate Version.swift file
         run: |
           mkdir -p Sources/AlertComponent
           echo "public let GitTagVersion = \"${{ steps.get_tag.outputs.tag_name }}\"" > Sources/AlertComponent/Version.swift
