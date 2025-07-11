@@ -3,22 +3,24 @@ name: Generate Version.swift from Git Tag
 on:
   push:
     tags:
-      - '*'  # Cualquier tag
-    branches:
-      - main # Solo si el tag está sobre main
+      - '*'  # Se activa con cualquier tag
 
 jobs:
-  generate-version-file:
-    if: startsWith(github.ref, 'refs/tags/') && github.ref_type == 'tag'
+  update-version-file:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para que git describa tags correctamente
+          fetch-depth: 0  # Necesario para acceder a tags y ramas
 
-      - name: Get tag name
+      - name: Fetch and checkout main
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Extract tag name
         id: get_tag
         run: echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
