@@ -23,7 +23,7 @@ public struct AlertView: View {
             Text(message)
                 .font(.body)
 
-            Text("Git Tag Ver:\(GitTagVersion)")
+            Text("Git tag ver:\(GitTagVersion)")
                 .font(.caption)
                 .foregroundColor(.gray)
 
