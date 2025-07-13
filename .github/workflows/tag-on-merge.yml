@@ -1,0 +1,80 @@
+name: Tag on PR Merge to Main
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to fetch tags
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          latest=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+          echo "Latest tag: $latest"
+          echo "tag=$latest" >> $GITHUB_OUTPUT
+
+      - name: Determine bump type from PR title
+        id: bump
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          echo "PR Title: $title"
+          first_word=$(echo "$title" | awk '{print toupper($1)}')
+          case $first_word in
+            MAJOR)
+              echo "bump=major" >> $GITHUB_OUTPUT
+              ;;
+            MINOR)
+              echo "bump=minor" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "bump=patch" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Calculate next version
+        id: next_tag
+        run: |
+          tag="${{ steps.get_tag.outputs.tag }}"
+          version="${tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          bump="${{ steps.bump.outputs.bump }}"
+          case $bump in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          next_tag="v$major.$minor.$patch"
+          echo "Next tag: $next_tag"
+          echo "next_tag=$next_tag" >> $GITHUB_OUTPUT
+
+      - name: Create and push new tag
+        run: |
+          git tag ${{ steps.next_tag.outputs.next_tag }}
+          git push origin ${{ steps.next_tag.outputs.next_tag }}
