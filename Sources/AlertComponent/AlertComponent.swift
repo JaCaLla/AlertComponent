@@ -23,10 +23,6 @@ public struct AlertView: View {
             Text(message)
                 .font(.body)
 
-            Text("Git Tag Ver:\(GitTagVersion)")
-                .font(.caption)
-                .foregroundColor(.gray)
-
             Button(action: onDismiss) {
                 Text(dismissText)
                     .bold()
