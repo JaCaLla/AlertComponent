@@ -53,3 +53,8 @@ If you want to start using this componet just fetch following [GitHub repository
 - **Xcode 15.0 or later**
 - **iOS 16.0 or later**
 
+## 🔖 License
+
+This project is licensed under the MIT License.  
+See the [LICENSE](./LICENSE) file for details.
+
